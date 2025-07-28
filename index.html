@@ -276,7 +276,7 @@
         flex: 1;
         padding: 16px;
         overflow-y: auto;
-        /* background: var(--background); */
+        background: #f9f9f9;
         scrollbar-width: thin;
         scrollbar-color: var(--primary) transparent;
       }
@@ -327,8 +327,32 @@
         font-size: 14px;
         line-height: 1.5;
         word-wrap: break-word;
-        white-space: pre-wrap;
+        white-space: normal;
         position: relative;
+      }
+
+      .message.assistant .message-bubble ul,
+      .message.assistant .message-bubble ol {
+        padding-left: 20px;
+        margin: 12px 0;
+      }
+
+      .message.assistant .message-bubble h1,
+      .message.assistant .message-bubble h2,
+      .message.assistant .message-bubble h3,
+      .message.assistant .message-bubble h4,
+      .message.assistant .message-bubble h5,
+      .message.assistant .message-bubble h6 {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 8px 0 4px 0;
+      }
+
+      .message.assistant .message-bubble h1 {
+        font-size: 16px;
+      }
+      .message.assistant .message-bubble h2 {
+        font-size: 15px;
       }
 
       .message.user .message-bubble {
@@ -1138,7 +1162,11 @@
             isError ? "error-message" : ""
           }`;
 
-          bubbleDiv.textContent = content;
+          if (type === "assistant") {
+            bubbleDiv.innerHTML = content;
+          } else {
+            bubbleDiv.textContent = content;
+          }
 
           messageDiv.appendChild(bubbleDiv);
 
