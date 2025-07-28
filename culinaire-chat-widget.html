@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Culinaire Chat Widget Test</title>
+  </head>
+  <body>
+    <script>
+      (function () {
+        "use strict";
+
+        // Prevent multiple instances
+        if (window.CulinaireChat) {
+          return;
+        }
+
+        window.CulinaireChat = {
+          init: function () {
+            this.injectCSS();
+            this.injectHTML();
+            this.initializeWidget();
+          },
+
+          injectCSS: function () {
+            var style = document.createElement("style");
+            style.textContent =
+              ":root { --culinaire-primary: #ef9396; --culinaire-primary-light: #f4b4b7; --culinaire-primary-dark: #e87579; --culinaire-background: #fff7ee; --culinaire-card: #ffffff; --culinaire-border: #f1f5f9; --culinaire-input: #ffffff; --culinaire-text: #0f172a; --culinaire-text-muted: #64748b; --culinaire-text-secondary: #475569; --culinaire-shadow: 0 0px 4px 0 rgb(0 0 0 / 0.05); --culinaire-shadow-lg: 0 0px 8px 0px rgb(0 0 0 / 0.07); --culinaire-shadow-xl: 0 0px 12px 0px rgb(0 0 0 / 0.1); --culinaire-radius: 0.75rem; --culinaire-radius-sm: 0.5rem; --culinaire-radius-lg: 1rem; }" +
+              '.chat-widget { position: fixed !important; bottom: 24px !important; right: 24px !important; z-index: 999999 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important; }' +
+              ".chat-toggle { width: 64px !important; height: 64px !important; border-radius: 50% !important; background: linear-gradient(135deg, var(--culinaire-primary) 0%, var(--culinaire-primary-dark) 100%) !important; border: none !important; cursor: pointer !important; box-shadow: var(--culinaire-shadow-xl) !important; display: flex !important; align-items: center !important; justify-content: center !important; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; position: relative !important; backdrop-filter: blur(8px) !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; }" +
+              ".chat-toggle:hover { box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25) !important; background: linear-gradient(135deg, var(--culinaire-primary-light) 0%, var(--culinaire-primary) 100%) !important; }" +
+              ".chat-toggle.open { background: linear-gradient(135deg, #f87171 0%, #ef4444 100%) !important; transform: rotate(45deg) !important; }" +
+              ".chat-toggle.open:hover { background: linear-gradient(135deg, #fca5a5 0%, #f87171 100%) !important; }" +
+              ".chat-icon, .close-icon { width: 24px !important; height: 24px !important; stroke: white !important; stroke-width: 2.5 !important; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; position: absolute !important; }" +
+              ".close-icon { opacity: 0 !important; transform: rotate(90deg) !important; }" +
+              ".chat-toggle.open .chat-icon { opacity: 0 !important; transform: rotate(-90deg) !important; }" +
+              ".chat-toggle.open .close-icon { opacity: 1 !important; transform: rotate(45deg) !important; }" +
+              ".notification-badge { position: absolute !important; top: -4px !important; right: -4px !important; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important; color: white !important; border-radius: 50% !important; width: 20px !important; height: 20px !important; font-size: 11px !important; font-weight: 600 !important; display: none !important; align-items: center !important; justify-content: center !important; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important; box-shadow: var(--culinaire-shadow) !important; }" +
+              "@keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.9; } }" +
+              ".chat-window { position: absolute !important; bottom: 84px !important; right: 0 !important; width: 400px !important; height: 600px !important; background: var(--culinaire-card) !important; border-radius: var(--culinaire-radius-lg) !important; box-shadow: var(--culinaire-shadow-xl) !important; opacity: 0 !important; visibility: hidden !important; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; }" +
+              ".chat-window.open { opacity: 1 !important; visibility: visible !important; }" +
+              ".chat-header { background: linear-gradient(135deg, var(--culinaire-primary) 0%, var(--culinaire-primary-dark) 100%) !important; color: white !important; padding: 20px 24px !important; position: relative !important; border-radius: var(--culinaire-radius-lg) var(--culinaire-radius-lg) 0 0 !important; }" +
+              ".chat-header-content { display: flex !important; align-items: center !important; justify-content: space-between !important; }" +
+              ".chat-header-left { display: flex !important; align-items: center !important; gap: 12px !important; }" +
+              ".chat-avatar { width: 40px !important; height: 40px !important; border-radius: 50% !important; background: rgba(255, 255, 255, 0.2) !important; display: flex !important; align-items: center !important; justify-content: center !important; font-size: 18px !important; }" +
+              ".chat-header-text h3 { font-size: 18px !important; font-weight: 600 !important; margin-bottom: 2px !important; color: white !important; }" +
+              ".chat-header-text p { opacity: 0.9 !important; font-size: 13px !important; font-weight: 400 !important; margin-bottom: 0px }" +
+              ".chat-actions { display: flex !important; align-items: center !important; gap: 8px !important; }" +
+              ".action-button { width: 32px !important; height: 32px !important; border-radius: var(--culinaire-radius-sm) !important; background: rgba(255, 255, 255, 0.1) !important; border: none !important; color: white !important; cursor: pointer !important; display: flex !important; align-items: center !important; justify-content: center !important; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important; backdrop-filter: blur(4px) !important; }" +
+              ".action-button:hover { background: rgba(255, 255, 255, 0.2) !important; }" +
+              ".status-indicator { display: flex !important; align-items: center !important; gap: 6px !important; font-size: 11px !important; opacity: 0.9 !important; margin-top: 4px !important; }" +
+              ".status-dot { width: 9px !important; height: 9px !important; border-radius: 50% !important; background: #10b981 !important; animation: statusPulse 2s ease-in-out infinite !important; }" +
+              "@keyframes statusPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(0.8); } }" +
+              ".chat-messages { display: flex !important; flex-direction: column !important; flex: 1 !important; padding: 16px !important; overflow-y: auto !important; background: #f9f9f9 !important; scrollbar-width: thin !important; scrollbar-color: var(--culinaire-primary) transparent !important; }" +
+              ".chat-messages::-webkit-scrollbar { width: 4px !important; }" +
+              ".chat-messages::-webkit-scrollbar-track { background: transparent !important; }" +
+              ".chat-messages::-webkit-scrollbar-thumb { background: var(--culinaire-primary) !important; border-radius: 2px !important; }" +
+              ".message { margin-bottom: 16px !important; animation: messageSlide 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important; }" +
+              "@keyframes messageSlide { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }" +
+              ".message.user { display: flex !important; justify-content: flex-end !important; }" +
+              ".message.assistant { display: flex !important; justify-content: flex-start !important; }" +
+              ".message-bubble { max-width: 85% !important; padding: 12px 16px !important; border-radius: var(--culinaire-radius) !important; font-size: 14px !important; line-height: 1.5 !important; word-wrap: break-word !important; white-space: normal !important; position: relative !important; }" +
+              ".message.assistant .message-bubble ul, .message.assistant .message-bubble ol { padding-left: 20px !important; margin: 12px 0 !important; }" +
+              ".message.assistant .message-bubble h1, .message.assistant .message-bubble h2, .message.assistant .message-bubble h3, .message.assistant .message-bubble h4, .message.assistant .message-bubble h5, .message.assistant .message-bubble h6 { font-size: 14px !important; font-weight: 600 !important; margin: 8px 0 4px 0 !important; }" +
+              ".message.assistant .message-bubble h1 { font-size: 16px !important; }" +
+              ".message.assistant .message-bubble h2 { font-size: 15px !important; }" +
+              ".message.user .message-bubble { background: linear-gradient(135deg, var(--culinaire-primary) 0%, var(--culinaire-primary-dark) 100%) !important; color: white !important; border-radius: var(--culinaire-radius) var(--culinaire-radius) 4px var(--culinaire-radius) !important; box-shadow: var(--culinaire-shadow) !important; }" +
+              ".message.assistant .message-bubble { background: var(--culinaire-card) !important; color: var(--culinaire-text) !important; border: 1px solid var(--culinaire-border) !important; border-radius: var(--culinaire-radius) !important; box-shadow: var(--culinaire-shadow) !important; }" +
+              ".typing-indicator { align-items: center !important; gap: 8px !important; padding: 12px 16px !important; max-width: 85% !important; }" +
+              ".typing-dots { display: flex !important; gap: 4px !important; }" +
+              ".typing-dot { width: 6px !important; height: 6px !important; border-radius: 50% !important; background: var(--culinaire-primary) !important; animation: typingBounce 1.4s ease-in-out infinite !important; }" +
+              ".typing-dot:nth-child(1) { animation-delay: -0.32s !important; }" +
+              ".typing-dot:nth-child(2) { animation-delay: -0.16s !important; }" +
+              "@keyframes typingBounce { 0%, 80%, 100% { transform: scale(0); opacity: 0.5; } 40% { transform: scale(1); opacity: 1; } }" +
+              ".welcome-message { text-align: center !important; color: var(--culinaire-text-muted) !important; margin: 40px 0 !important; font-size: 14px !important; display: flex !important; flex-direction: column !important; align-items: center !important; gap: 8px !important; }" +
+              ".welcome-icon { font-size: 32px !important; margin-bottom: 8px !important; }" +
+              ".reset-section { padding: 12px 16px !important; background: var(--culinaire-card) !important; border-top: 1px solid var(--culinaire-border) !important; display: flex !important; align-items: center !important; justify-content: center !important; }" +
+              ".reset-button { background: transparent !important; border: 1px solid var(--culinaire-border) !important; color: var(--culinaire-text-secondary) !important; padding: 6px 12px !important; border-radius: var(--culinaire-radius-sm) !important; font-size: 12px !important; cursor: pointer !important; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important; display: flex !important; align-items: center !important; gap: 6px !important; }" +
+              ".reset-button:hover { border-color: var(--culinaire-primary) !important; color: var(--culinaire-primary) !important; background: rgba(239, 147, 150, 0.05) !important; }" +
+              ".chat-input-container { padding: 16px !important; background: var(--culinaire-card) !important; border-top: 1px solid var(--culinaire-border) !important; border-radius: 0 0 var(--culinaire-radius-lg) var(--culinaire-radius-lg) !important; }" +
+              ".chat-input-form { display: flex !important; gap: 8px !important; align-items: flex-end !important; }" +
+              ".chat-input { flex: 1 !important; padding: 12px 16px !important; border: 1px solid var(--culinaire-border) !important; border-radius: var(--culinaire-radius) !important; font-size: 14px !important; outline: none !important; resize: none !important; min-height: 44px !important; max-height: 120px !important; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important; font-family: inherit !important; background: var(--culinaire-input) !important; color: var(--culinaire-text) !important; overflow: hidden !important; }" +
+              ".chat-input:focus { border-color: var(--culinaire-primary) !important; box-shadow: 0 0 0 3px rgba(239, 147, 150, 0.1) !important; }" +
+              ".chat-input::placeholder { color: var(--culinaire-text-muted) !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }" +
+              ".send-button { background: linear-gradient(135deg, var(--culinaire-primary) 0%, var(--culinaire-primary-dark) 100%) !important; color: white !important; border: none !important; border-radius: var(--culinaire-radius) !important; width: 44px !important; height: 44px !important; cursor: pointer !important; display: flex !important; align-items: center !important; justify-content: center !important; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important; flex-shrink: 0 !important; box-shadow: var(--culinaire-shadow) !important; }" +
+              ".send-button:hover:not(:disabled) { box-shadow: var(--culinaire-shadow-lg) !important; background: linear-gradient(135deg, var(--culinaire-primary-light) 0%, var(--culinaire-primary) 100%) !important; }" +
+              ".send-button:disabled { opacity: 0.5 !important; cursor: not-allowed !important; transform: none !important; }" +
+              "@media (max-width: 480px) { .chat-widget { bottom: 16px !important; right: 16px !important; } .chat-window { width: calc(100vw - 32px) !important; height: calc(100vh - 140px) !important; max-height: 600px !important; bottom: 80px !important; right: -8px !important; } .message-bubble { max-width: 90% !important; } }" +
+              '.chat-toggle::before { content: "" !important; position: absolute !important; top: 0 !important; left: -100% !important; width: 100% !important; height: 100% !important; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent) !important; transition: left 0.6s ease !important; }' +
+              ".chat-toggle:hover::before { left: 100% !important; }" +
+              ".error-message { background: #fef2f2 !important; border: 1px solid #fecaca !important; color: #dc2626 !important; }" +
+              ".connection-lost { text-align: center !important; padding: 12px !important; background: #fef3cd !important; border: 1px solid #fde68a !important; color: #92400e !important; font-size: 12px !important; margin: 12px !important; border-radius: var(--culinaire-radius) !important; display: flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important; }" +
+              ".loading { opacity: 0.7 !important; pointer-events: none !important; }" +
+              "@keyframes fadeInUp { from { opacity: 0; transform: translateY(30px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }" +
+              ".chat-window.open { animation: fadeInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; }" +
+              ".reset-section { padding: 12px 16px !important; background: var(--culinaire-card) !important; border-top: 1px solid var(--culinaire-border) !important; display: flex !important; align-items: center !important; justify-content: center !important; }" +
+              ".reset-button { background: transparent !important; border: 1px solid var(--culinaire-border) !important; color: var(--culinaire-text-secondary) !important; padding: 6px 12px !important; border-radius: var(--culinaire-radius-sm) !important; font-size: 12px !important; cursor: pointer !important; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important; display: flex !important; align-items: center !important; gap: 6px !important; }" +
+              ".reset-button:hover { border-color: var(--culinaire-primary) !important; color: var(--culinaire-primary) !important; background: rgba(239, 147, 150, 0.05) !important; }" +
+              ".chat-input-container { padding: 16px !important; background: var(--culinaire-card) !important; border-top: 1px solid var(--culinaire-border) !important; border-radius: 0 0 var(--culinaire-radius-lg) var(--culinaire-radius-lg) !important; }" +
+              ".chat-input-form { display: flex !important; gap: 8px !important; align-items: flex-end !important; }" +
+              ".chat-input { flex: 1 !important; padding: 12px 16px !important; border: 1px solid var(--culinaire-border) !important; border-radius: var(--culinaire-radius) !important; font-size: 14px !important; outline: none !important; resize: none !important; min-height: 44px !important; max-height: 120px !important; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important; font-family: inherit !important; background: var(--culinaire-input) !important; color: var(--culinaire-text) !important; overflow: hidden !important; }" +
+              ".chat-input:focus { border-color: var(--culinaire-primary) !important; box-shadow: 0 0 0 3px rgba(239, 147, 150, 0.1) !important; }" +
+              ".chat-input::placeholder { color: var(--culinaire-text-muted) !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }" +
+              ".send-button { background: linear-gradient(135deg, var(--culinaire-primary) 0%, var(--culinaire-primary-dark) 100%) !important; color: white !important; border: none !important; border-radius: var(--culinaire-radius) !important; width: 44px !important; height: 44px !important; cursor: pointer !important; display: flex !important; align-items: center !important; justify-content: center !important; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important; flex-shrink: 0 !important; box-shadow: var(--culinaire-shadow) !important; }" +
+              ".send-button:hover:not(:disabled) { box-shadow: var(--culinaire-shadow-lg) !important; background: linear-gradient(135deg, var(--culinaire-primary-light) 0%, var(--culinaire-primary) 100%) !important; }" +
+              ".send-button:disabled { opacity: 0.5 !important; cursor: not-allowed !important; transform: none !important; }" +
+              "@media (max-width: 480px) { .chat-widget { bottom: 16px !important; right: 16px !important; } .chat-window { width: calc(100vw - 32px) !important; height: calc(100vh - 140px) !important; max-height: 600px !important; bottom: 80px !important; right: -8px !important; } .message-bubble { max-width: 90% !important; } }" +
+              '.chat-toggle::before { content: "" !important; position: absolute !important; top: 0 !important; left: -100% !important; width: 100% !important; height: 100% !important; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent) !important; transition: left 0.6s ease !important; }' +
+              ".chat-toggle:hover::before { left: 100% !important; }" +
+              ".error-message { background: #fef2f2 !important; border: 1px solid #fecaca !important; color: #dc2626 !important; }" +
+              ".connection-lost { text-align: center !important; padding: 12px !important; background: #fef3cd !important; border: 1px solid #fde68a !important; color: #92400e !important; font-size: 12px !important; margin: 12px !important; border-radius: var(--culinaire-radius) !important; display: flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important; }" +
+              ".loading { opacity: 0.7 !important; pointer-events: none !important; }" +
+              "@keyframes fadeInUp { from { opacity: 0; transform: translateY(30px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }" +
+              ".chat-window.open { animation: fadeInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; }";
+
+            document.head.appendChild(style);
+          },
+
+          injectHTML: function () {
+            var html =
+              '<div class="chat-widget" id="chatWidget">' +
+              '<button class="chat-toggle" id="chatToggle" aria-label="Ouvrir l\'assistant culinaire">' +
+              '<div class="notification-badge" id="notificationBadge">1</div>' +
+              '<svg class="chat-icon" viewBox="0 0 24 24" fill="none">' +
+              '<path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6z"/>' +
+              '<line x1="6" y1="17" x2="18" y2="17"/>' +
+              "</svg>" +
+              '<svg class="close-icon" viewBox="0 0 24 24" fill="none">' +
+              '<line x1="18" y1="6" x2="6" y2="18"/>' +
+              '<line x1="6" y1="6" x2="18" y2="18"/>' +
+              "</svg>" +
+              "</button>" +
+              '<div class="chat-window" id="chatWindow">' +
+              '<div class="chat-header">' +
+              '<div class="chat-header-content">' +
+              '<div class="chat-header-left">' +
+              '<div class="chat-avatar">👨‍🍳</div>' +
+              '<div class="chat-header-text">' +
+              "<h3 >Assistant Culinaire</h3>" +
+              "<p>Votre expert en recettes</p>" +
+              '<div class="status-indicator">' +
+              '<div class="status-dot"></div>' +
+              "<span>En ligne</span>" +
+              "</div>" +
+              "</div>" +
+              "</div>" +
+              '<div class="chat-actions">' +
+              '<button class="action-button" id="resetConversation" title="Nouvelle conversation">' +
+              '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+              '<polyline points="1 4 1 10 7 10"></polyline>' +
+              '<path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>' +
+              "</svg>" +
+              "</button>" +
+              "</div>" +
+              "</div>" +
+              "</div>" +
+              '<div class="chat-messages" id="chatMessages">' +
+              '<div class="welcome-message">' +
+              '<div class="welcome-icon">🍴</div>' +
+              "<div>" +
+              "<strong>Bonjour et bienvenue !</strong><br />" +
+              "Je suis votre assistant culinaire personnel. Posez-moi vos questions sur les recettes, ingrédients, techniques de cuisine et plus encore !" +
+              "</div>" +
+              "</div>" +
+              "</div>" +
+              '<div class="chat-input-container">' +
+              '<form class="chat-input-form" id="chatForm">' +
+              '<textarea class="chat-input" id="chatInput" placeholder="Demandez-moi une recette, un conseil cuisine..." rows="1"></textarea>' +
+              '<button type="submit" class="send-button" id="sendButton" aria-label="Envoyer le message">' +
+              '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">' +
+              '<line x1="22" y1="2" x2="11" y2="13"></line>' +
+              '<polygon points="22,2 15,22 11,13 2,9 22,2"></polygon>' +
+              "</svg>" +
+              "</button>" +
+              "</form>" +
+              "</div>" +
+              "</div>" +
+              "</div>";
+
+            document.body.insertAdjacentHTML("beforeend", html);
+          },
+
+          initializeWidget: function () {
+            var self = this;
+            var config = {
+              n8nWebhookUrl:
+                "https://n8n.srv929119.hstgr.cloud/webhook/kajabi-chat",
+              sessionTimeout: 30 * 60 * 1000,
+              excludedPaths: ["/login"],
+              autoShowNotification: true,
+              maxRetries: 3,
+              apiKey: "wbGoRTGXI65t1u6oMNPQ13c4rcbE8PlcRkeLPBWJskc=",
+              allowedOrigins: [
+                "https://www.unboncoupdefourchette.com",
+                "http://localhost",
+                "https://shanksfd.github.io/kajabi-chat-bot/",
+              ],
+            };
+
+            var currentPath = window.location.pathname;
+            var shouldExclude = config.excludedPaths.some(function (path) {
+              return currentPath.includes(path) || currentPath === path;
+            });
+
+            if (shouldExclude) {
+              return;
+            }
+
+            var isOpen = false;
+            var retryCount = 0;
+
+            var chatWidget = document.getElementById("chatWidget");
+            var chatToggle = document.getElementById("chatToggle");
+            var chatWindow = document.getElementById("chatWindow");
+            var chatMessages = document.getElementById("chatMessages");
+            var chatForm = document.getElementById("chatForm");
+            var chatInput = document.getElementById("chatInput");
+            var sendButton = document.getElementById("sendButton");
+            var notificationBadge =
+              document.getElementById("notificationBadge");
+            var resetButton = document.getElementById("resetConversation");
+
+            var sessionId = this.getOrCreateSessionId(config.sessionTimeout);
+
+            // Show notification badge if enabled and no existing messages
+            if (config.autoShowNotification && !this.hasExistingMessages()) {
+              this.showNotificationBadge(notificationBadge);
+            }
+
+            // Toggle chat window
+            chatToggle.addEventListener("click", function () {
+              self.toggleChat(
+                isOpen,
+                chatToggle,
+                chatWindow,
+                chatInput,
+                notificationBadge
+              );
+              isOpen = !isOpen;
+            });
+
+            // Reset conversation
+            resetButton.addEventListener("click", function () {
+              self.resetConversation(chatMessages, config.sessionTimeout);
+              sessionId = self.getOrCreateSessionId(config.sessionTimeout);
+            });
+
+            // Form submission
+            chatForm.addEventListener("submit", function (e) {
+              e.preventDefault();
+              self.sendMessage(
+                chatInput,
+                chatMessages,
+                sendButton,
+                sessionId,
+                config
+              );
+            });
+
+            // Enter key handling
+            chatInput.addEventListener("keydown", function (e) {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                self.sendMessage(
+                  chatInput,
+                  chatMessages,
+                  sendButton,
+                  sessionId,
+                  config
+                );
+              }
+            });
+
+            // Close on outside click
+            document.addEventListener("click", function (e) {
+              if (isOpen && !chatWidget.contains(e.target)) {
+                self.closeChat(chatToggle, chatWindow);
+                isOpen = false;
+              }
+            });
+
+            // Handle page visibility changes
+            document.addEventListener("visibilitychange", function () {
+              if (!document.hidden && isOpen) {
+                self.scrollToBottom(chatMessages);
+              }
+            });
+
+            this.loadChatHistory(chatMessages);
+            this.autoResizeTextarea(chatInput);
+
+            console.log(
+              "🤖 Assistant Culinaire initialisé avec la session:",
+              sessionId
+            );
+          },
+
+          hasExistingMessages: function () {
+            var savedMessages = localStorage.getItem("kajabi_chat_messages");
+            return savedMessages && JSON.parse(savedMessages).length > 0;
+          },
+
+          getOrCreateSessionId: function (sessionTimeout) {
+            var sessionId = localStorage.getItem("kajabi_chat_session_id");
+            var sessionCreatedAt = localStorage.getItem(
+              "kajabi_chat_session_created_at"
+            );
+            var now = new Date().getTime();
+
+            if (
+              !sessionId ||
+              !sessionCreatedAt ||
+              now - parseInt(sessionCreatedAt) > sessionTimeout
+            ) {
+              sessionId =
+                "culinaire_" +
+                Date.now() +
+                "_" +
+                Math.random().toString(36).substr(2, 9);
+              localStorage.setItem("kajabi_chat_session_id", sessionId);
+              localStorage.setItem(
+                "kajabi_chat_session_created_at",
+                now.toString()
+              );
+              localStorage.removeItem("kajabi_chat_messages");
+            }
+
+            return sessionId;
+          },
+
+          showNotificationBadge: function (notificationBadge) {
+            notificationBadge.style.display = "flex";
+          },
+
+          hideNotificationBadge: function (notificationBadge) {
+            notificationBadge.style.display = "none";
+          },
+
+          toggleChat: function (
+            isOpen,
+            chatToggle,
+            chatWindow,
+            chatInput,
+            notificationBadge
+          ) {
+            if (isOpen) {
+              this.closeChat(chatToggle, chatWindow);
+            } else {
+              this.openChat(
+                chatToggle,
+                chatWindow,
+                chatInput,
+                notificationBadge
+              );
+            }
+          },
+
+          openChat: function (
+            chatToggle,
+            chatWindow,
+            chatInput,
+            notificationBadge
+          ) {
+            chatToggle.classList.add("open");
+            chatWindow.classList.add("open");
+            this.hideNotificationBadge(notificationBadge);
+
+            setTimeout(function () {
+              chatInput.focus();
+            }, 300);
+
+            this.scrollToBottom(document.getElementById("chatMessages"));
+          },
+
+          closeChat: function (chatToggle, chatWindow) {
+            chatToggle.classList.remove("open");
+            chatWindow.classList.remove("open");
+          },
+
+          resetConversation: function (chatMessages, sessionTimeout) {
+            localStorage.removeItem("kajabi_chat_messages");
+
+            chatMessages.innerHTML =
+              '<div class="welcome-message">' +
+              '<div class="welcome-icon">🍴</div>' +
+              "<div>" +
+              "<strong>Nouvelle conversation démarrée !</strong><br>" +
+              "Je suis votre assistant culinaire personnel. Posez-moi vos questions sur les recettes, ingrédients, techniques de cuisine et plus encore !" +
+              "</div>" +
+              "</div>";
+
+            var sessionId = this.getOrCreateSessionId(sessionTimeout);
+            this.scrollToBottom(chatMessages);
+
+            console.log(
+              "🔄 Conversation réinitialisée avec nouvelle session:",
+              sessionId
+            );
+          },
+
+          loadChatHistory: function (chatMessages) {
+            var savedMessages = localStorage.getItem("kajabi_chat_messages");
+            if (savedMessages) {
+              var messages = JSON.parse(savedMessages);
+              if (messages.length > 0) {
+                chatMessages.innerHTML = "";
+              }
+              var self = this;
+              messages.forEach(function (msg) {
+                self.addMessage(chatMessages, msg.content, msg.type, false);
+              });
+            }
+          },
+
+          saveChatHistory: function (content, type) {
+            var savedMessages = localStorage.getItem("kajabi_chat_messages");
+            var messages = savedMessages ? JSON.parse(savedMessages) : [];
+
+            messages.push({
+              content: content,
+              type: type,
+              timestamp: new Date().toISOString(),
+            });
+
+            if (messages.length > 100) {
+              messages.splice(0, messages.length - 100);
+            }
+
+            localStorage.setItem(
+              "kajabi_chat_messages",
+              JSON.stringify(messages)
+            );
+          },
+
+          autoResizeTextarea: function (chatInput) {
+            chatInput.addEventListener("input", function () {
+              chatInput.style.height = "auto";
+              chatInput.style.height =
+                Math.min(chatInput.scrollHeight, 120) + "px";
+            });
+          },
+
+          sendMessage: function (
+            chatInput,
+            chatMessages,
+            sendButton,
+            sessionId,
+            config
+          ) {
+            var self = this;
+            var message = chatInput.value.trim();
+            if (!message) return;
+
+            this.setInputState(chatInput, sendButton, false);
+            this.addMessage(chatMessages, message, "user");
+            chatInput.value = "";
+            chatInput.style.height = "auto";
+            this.showTypingIndicator(chatMessages);
+
+            this.sendToN8NWithRetry(message, sessionId, config, 0)
+              .then(function (response) {
+                self.hideTypingIndicator(chatMessages);
+                var responseText = self.extractResponseText(response);
+                self.addMessage(chatMessages, responseText, "assistant");
+              })
+              .catch(function (error) {
+                console.error("Erreur lors de l'envoi du message:", error);
+                self.hideTypingIndicator(chatMessages);
+                self.handleConnectionError(chatMessages);
+              })
+              .finally(function () {
+                self.setInputState(chatInput, sendButton, true);
+              });
+          },
+
+          extractResponseText: function (response) {
+            console.log("Réponse brute:", response);
+
+            if (Array.isArray(response)) {
+              if (response.length > 0 && response[0].output) {
+                return response[0].output;
+              }
+              return "J'ai reçu une réponse dans un format inattendu. Veuillez réessayer.";
+            }
+
+            if (response && typeof response === "object") {
+              if (response.output) {
+                return response.output;
+              }
+              if (response.text) {
+                return response.text;
+              }
+              if (response.message) {
+                return response.message;
+              }
+            }
+
+            if (typeof response === "string") {
+              return response;
+            }
+
+            return "Je m'excuse, mais j'ai rencontré une erreur lors du traitement de votre demande. Veuillez réessayer.";
+          },
+
+          sendToN8NWithRetry: function (
+            message,
+            sessionId,
+            config,
+            retryCount
+          ) {
+            var self = this;
+            return this.sendToN8N(message, sessionId, config).catch(function (
+              error
+            ) {
+              if (retryCount < config.maxRetries) {
+                console.log(
+                  "Tentative de nouvelle connexion " +
+                    (retryCount + 1) +
+                    " sur " +
+                    config.maxRetries
+                );
+                return new Promise(function (resolve) {
+                  setTimeout(function () {
+                    resolve(
+                      self.sendToN8NWithRetry(
+                        message,
+                        sessionId,
+                        config,
+                        retryCount + 1
+                      )
+                    );
+                  }, 1000 * (retryCount + 1));
+                });
+              }
+              throw error;
+            });
+          },
+
+          sendToN8N: function (message, sessionId, config) {
+            var payload = {
+              chatInput: message,
+              sessionId: sessionId,
+              createdAt: new Date().toISOString(),
+              source: "culinaire_widget",
+              userAgent: navigator.userAgent,
+              url: window.location.href,
+            };
+
+            var headers = {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            };
+
+            if (config.apiKey) {
+              console.log("Bearer", config.apiKey);
+              headers["Authorization"] = "Bearer " + config.apiKey;
+            }
+            console.log("Request headers:", headers);
+            console.log("Request payload:", JSON.stringify(payload));
+
+            if (window.location.origin) {
+              headers["Origin"] = window.location.origin;
+            }
+
+            return fetch(config.n8nWebhookUrl, {
+              method: "POST",
+              body: JSON.stringify(payload),
+              headers: headers,
+              mode: "cors",
+              credentials: "omit",
+            })
+              .then(function (response) {
+                if (!response.ok) {
+                  throw new Error("Erreur HTTP! statut: " + response.status);
+                }
+                return response.text();
+              })
+              .then(function (text) {
+                console.log("Réponse N8N:", text);
+
+                if (!text || text.trim() === "") {
+                  throw new Error("Réponse vide du serveur");
+                }
+
+                try {
+                  return JSON.parse(text);
+                } catch (e) {
+                  console.log(
+                    "Échec de l'analyse JSON, traitement comme texte brut"
+                  );
+                  return text.trim();
+                }
+              });
+          },
+
+          handleConnectionError: function (chatMessages) {
+            this.addMessage(
+              chatMessages,
+              "Je rencontre des difficultés de connexion en ce moment. Veuillez vérifier votre connexion internet et réessayer.",
+              "assistant",
+              true,
+              true
+            );
+
+            this.showConnectionLostIndicator(chatMessages);
+          },
+
+          showConnectionLostIndicator: function (chatMessages) {
+            var existingIndicator =
+              chatMessages.querySelector(".connection-lost");
+            if (existingIndicator) return;
+
+            var indicator = document.createElement("div");
+            indicator.className = "connection-lost";
+            indicator.innerHTML =
+              '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+              '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>' +
+              '<line x1="12" y1="9" x2="12" y2="13"></line>' +
+              '<line x1="12" y1="17" x2="12.01" y2="17"></line>' +
+              "</svg>" +
+              "<span>Connexion perdue. Nouvelle tentative...</span>";
+
+            chatMessages.appendChild(indicator);
+            this.scrollToBottom(chatMessages);
+
+            setTimeout(function () {
+              if (indicator.parentNode) {
+                indicator.remove();
+              }
+            }, 5000);
+          },
+
+          addMessage: function (chatMessages, content, type, save, isError) {
+            if (save === undefined) save = true;
+            if (isError === undefined) isError = false;
+
+            var messageDiv = document.createElement("div");
+            messageDiv.className = "message " + type;
+
+            var bubbleDiv = document.createElement("div");
+            bubbleDiv.className =
+              "message-bubble" + (isError ? " error-message" : "");
+
+            if (type === "assistant") {
+              bubbleDiv.innerHTML = content;
+            } else {
+              bubbleDiv.textContent = content;
+            }
+
+            messageDiv.appendChild(bubbleDiv);
+
+            var welcomeMessage = chatMessages.querySelector(".welcome-message");
+            if (welcomeMessage && save) {
+              welcomeMessage.remove();
+            }
+
+            chatMessages.appendChild(messageDiv);
+            this.scrollToBottom(chatMessages);
+
+            if (save && !isError) {
+              this.saveChatHistory(content, type);
+            }
+          },
+
+          showTypingIndicator: function (chatMessages) {
+            var welcomeMessage = chatMessages.querySelector(".welcome-message");
+            if (welcomeMessage) return;
+
+            var existingTyping =
+              chatMessages.querySelector(".typing-indicator");
+            if (existingTyping) existingTyping.remove();
+
+            var typingDiv = document.createElement("div");
+            typingDiv.className = "typing-indicator";
+            typingDiv.innerHTML =
+              '<div class="typing-dots">' +
+              '<div class="typing-dot"></div>' +
+              '<div class="typing-dot"></div>' +
+              '<div class="typing-dot"></div>' +
+              "</div>";
+
+            chatMessages.appendChild(typingDiv);
+            this.scrollToBottom(chatMessages);
+          },
+
+          hideTypingIndicator: function (chatMessages) {
+            var typingIndicator =
+              chatMessages.querySelector(".typing-indicator");
+            if (typingIndicator) {
+              typingIndicator.remove();
+            }
+          },
+
+          setInputState: function (chatInput, sendButton, enabled) {
+            chatInput.disabled = !enabled;
+            sendButton.disabled = !enabled;
+
+            if (enabled) {
+              chatInput.focus();
+              document.getElementById("chatWidget").classList.remove("loading");
+            } else {
+              document.getElementById("chatWidget").classList.add("loading");
+            }
+          },
+
+          scrollToBottom: function (chatMessages) {
+            setTimeout(function () {
+              chatMessages.scrollTop = chatMessages.scrollHeight;
+            }, 100);
+          },
+        };
+
+        // Auto-initialize
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", function () {
+            window.CulinaireChat.init();
+          });
+        } else {
+          window.CulinaireChat.init();
+        }
+      })();
+    </script>
+  </body>
+</html>
